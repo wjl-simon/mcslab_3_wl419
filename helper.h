@@ -17,14 +17,14 @@ inline bool rookMove(int const RANK_D,int const FILE_D,int const RANK_S,int cons
       int maxstep = FILE_D - FILE_S - 1; // num of squres between src and dest
       // Check if there is anther piece between the src and dest
       for(int i = 1; i <= maxstep; i++)
-        if(board[RANK_S][i+FILE_S] != nullptr) return false;
+        if(board[RANK_S][FILE_S+i] != nullptr) return false;
     }
     
     if(FILE_D < FILE_S) // moving left
     {
       int maxstep = FILE_S - FILE_D - 1;
       for(int i = 1; i <= maxstep; i++)
-        if(board[RANK_S][i-FILE_S] != nullptr) return false;
+        if(board[RANK_S][FILE_S-i] != nullptr) return false;
     }
 
     return true;

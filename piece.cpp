@@ -51,7 +51,9 @@ bool Piece::getColor() const { return COLOR; }
  */
 std::string Piece::getPos() const
 {
-  std::string c = std::to_string(currentFile+'A') + std::to_string(currentRank+'1');
+  //const char str[] = {char('A'+currentFile), char('1'+currentRank), '\0'};
+  //std::string c = str;
+  std::string c = ""; c += char('A'+currentFile); c += char('1'+currentRank);
   return c;
 }
 
@@ -81,7 +83,10 @@ bool King::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const 
   if(isInside(RANK_D,FILE_D) == false) return false;
 
   // Test if the destination has own side's piece
-  if(!isDestHostile(RANK_D,FILE_D,board)) return false;
+  if(board[RANK_D][FILE_D] != nullptr)
+  {
+    if(board[RANK_D][FILE_D]->getColor() == COLOR) return false;
+  }
 
   // Test if the destination follows the rule:
   // a king could only make one quare of move
@@ -114,7 +119,10 @@ bool Queen::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const
   if(isInside(RANK_D,FILE_D) == false) return false;
   
   // Test if the desttination has own side's piece
-  if(!isDestHostile(RANK_D,FILE_D,board)) return false;
+  if(board[RANK_D][FILE_D] != nullptr)
+  {
+    if(board[RANK_D][FILE_D]->getColor() == COLOR) return false;
+  }
   
   // Test if the destination follows the rule:
   // a queen combines the power of rook and bishop
@@ -138,11 +146,14 @@ bool Rook::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const 
   // The current coordinate
   int const RANK_S = currentRank; int const FILE_S = currentFile;
   
-  // Test if the destination of a move is in of the board
+  // Test if the destination of a move is out of the board
   if(isInside(RANK_D,FILE_D) == false) return false;
 
   // Test if the destination has own side's piece
-  if(!isDestHostile(RANK_D,FILE_D,board)) return false;
+  if(board[RANK_D][FILE_D] != nullptr)
+  {
+    if(board[RANK_D][FILE_D]->getColor() == COLOR) return false;
+  }
 
   // Test if the destination follows the rule of moving a rook
   return rookMove(RANK_D,FILE_D,RANK_S,FILE_S,board);
@@ -164,7 +175,10 @@ bool Bishop::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** cons
   if(isInside(RANK_D,FILE_D) == false) return false;
   
   // Test if the destination has own side's piece
-  if(!isDestHostile(RANK_D,FILE_D,board)) return false;
+  if(board[RANK_D][FILE_D] != nullptr)
+  {
+    if(board[RANK_D][FILE_D]->getColor() == COLOR) return false;
+  }
   
   // Test if the destination follows the rule of moving a bishop
   return bishopMove(RANK_D,FILE_D,RANK_S,FILE_S,board);
@@ -189,7 +203,10 @@ bool Knight::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** cons
   if(isInside(RANK_D,FILE_D) == false) return false;
 
   // Test if the destination has own side's piece
-  if(!isDestHostile(RANK_D,FILE_D,board)) return false;
+  if(board[RANK_D][FILE_D] != nullptr)
+  {
+    if(board[RANK_D][FILE_D]->getColor() == COLOR) return false;
+  }
   
   // Test if the destination follows the rule of moving a knight
   if(abs(RANK_D-RANK_S)==1 && abs(FILE_D-FILE_S)==2) return true; // 1 vertically and 2 horizontally
@@ -309,7 +326,6 @@ bool Pawn::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const 
 
 
 
-
 /**
  * Increment the Pawn's moving times
  */
@@ -321,6 +337,7 @@ void Pawn::incCount(){ ++moveTimes; }
  * Increment the Pawn's moving times
  */
 void Pawn::decCount() { --moveTimes; }
+
 
 
 Pawn::~Pawn(){}

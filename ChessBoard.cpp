@@ -1,7 +1,7 @@
 #include "piece.h"
 #include "ChessBoard.h"
 #include <iostream>
-#include <cstring>
+//#include <cstring>
 #include "helper.h"
 
 using namespace std;
@@ -91,7 +91,7 @@ void ChessBoard::setupBoard()
     }
   }
 
-  cout << "A new chess game is started!" << endl << endl;
+  cout << "A new chess game is started!" << endl;
 }
 
 
@@ -102,17 +102,20 @@ void ChessBoard::setupBoard()
 inline void ChessBoard::clearBoard()
 {
   // Clearing the pieces
-  if(whitePieces!=nullptr || blackPieces!=nullptr)
+  if(whitePieces!=nullptr)
   {
-    for(int i = 0; i < NUM_P ; i++ )
-    {
+    for(int i = 0; i < NUM_P ; i++)
       if(whitePieces[i]) delete whitePieces[i];
-
-      if(blackPieces[i]) delete blackPieces[i];
-    }
     
-    delete [] whitePieces, whitePieces = nullptr;
-    delete [] blackPieces, blackPieces = nullptr;
+    delete [] whitePieces; whitePieces = nullptr;
+  }
+
+  if(blackPieces!=nullptr)
+  {
+    for(int i = 0; i < NUM_P ; i++)
+      if(blackPieces[i]) delete blackPieces[i];
+    
+    delete [] blackPieces; blackPieces = nullptr;
   }
 
   // Clearing the board
@@ -120,10 +123,12 @@ inline void ChessBoard::clearBoard()
   {
     for(int i = 0; i < BOARD_SIZE; i++)
     {
+      /*
       for(int j = 0; j < BOARD_SIZE; j++)
       {
         if(board[i][j]) delete board[i][j];
       }
+      */
       delete [] board[i];
     }
     delete [] board; board = nullptr;
@@ -237,14 +242,18 @@ void ChessBoard::makeFakeMove(int const RANK_S, int const FILE_S, int const RANK
   if(myPiece->isDestHostile(RANK_D,FILE_D,board))
   {
     hostPiece = board[RANK_D][FILE_D]; // get the ptr to that hostile piece
-    char hostPos[] = { static_cast<char>(FILE_D+'A'), static_cast<char>(RANK_D+'1'), '\0'};
+    const char hostPos[] = { char(FILE_D+'A'), char(RANK_D+'1'), '\0'};
     
     // "Taking" the hostile from the look-up on which isInCheck() and so forth depend
+    std::string tempPos;
     if(hostPiece->getColor() == WHITE) // white hostile
     {
       for(int i = 0; i < NUM_P; i++) // locate the victim piece in whitePieces[]
       {
-        if(strcmp(whitePieces[i]->getPos().c_str(),hostPos) == 0)
+        if(!whitePieces[i]) continue;
+        
+        tempPos = whitePieces[i]->getPos();
+        if(tempPos.compare(hostPos) == 0)
         {
           whitePieces[i] = nullptr; // temporarily whiping out from the look up, not deleting!
           break;
@@ -255,7 +264,10 @@ void ChessBoard::makeFakeMove(int const RANK_S, int const FILE_S, int const RANK
     {
       for(int i = 0; i < NUM_P; i++)
       {
-        if(strcmp(blackPieces[i]->getPos().c_str(),hostPos) == 0)
+        if(!blackPieces[i]) continue;
+        
+        tempPos = blackPieces[i]->getPos();
+        if(tempPos.compare(hostPos) == 0)
         {
           blackPieces[i] = nullptr; 
           break;
@@ -464,17 +476,17 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   Piece* myPiece = nullptr; Piece* hostPiece = nullptr;
   
   //=== 0.1. Test if the source position is empty
-  if(!board[RANK_S][FILE_D])
+  if(!board[RANK_S][FILE_S])
   {
-    cerr << "There is no piece at position " << srcPos << "!" << endl << endl;
+    cerr << "There is no piece at position " << srcPos << "!" << endl;
     return;
   }
   
   //=== 0.2. Test if the source position is of opponent's
-  if(board[RANK_S][FILE_D]->getColor()!=moveTurn)
+  if(board[RANK_S][FILE_S]->getColor()!=moveTurn)
   {
      cerr << "It is not " << (moveTurn==WHITE ? "Black's ": "White's ")
-         << " turn to move!" << endl << endl;
+         << " turn to move!" << endl;
     //throw PiManipErr("Invalid source position!");
      return;
   }
@@ -485,7 +497,7 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   //=== 1. Test if the game is over (a king is checkmated)
   if(gameOver)
   {
-    cerr << "The game was over, please start a new game!" << endl << endl;
+    cerr << "The game was over, please start a new game!" << endl;
     //throw PiManipErr("The game was over, please start a new game!");
   }
   
@@ -518,7 +530,8 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   //=== 3. Test if the move is legal
   if(myPiece->movePieceRuleTest(RANK_D,FILE_D,board) == false)
   {
-    cerr << *myPiece << " cannot move to " << desPos << "!" << endl << endl;
+    cerr << *myPiece << " cannot move to " << desPos << "!" << endl;
+    return;
     //throw PiManipErr("Invalid move of a piece!");
   }
 
@@ -556,7 +569,8 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   {
     // Restore
     undoMakeFakeMove(RANK_S,FILE_S,RANK_D,FILE_D,hostPiece);
-    cerr << *myPiece << " cannot move to " << desPos << "!" << endl << endl;
+    cerr << *myPiece << " cannot move to " << desPos << "!" << endl;
+    return;
     // throw an exception
     //throw PiManipErr("Invalid move of a piece!");  
   }
@@ -568,10 +582,10 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
     delete hostPiece; // commit this move
 
     // print out this move
-    cout << *myPiece << " moves from " << srcPos << " to " << desPos;
-    if(!hostPiece)
+    cout << *myPiece << " moves from " << srcPos << " to " << myPiece->getPos();
+    if(hostPiece)
       cout << " taking " << hostPieceInfo;
-
+    
     cout << endl;
   }
 
@@ -598,10 +612,6 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
       }
     }
   }
-
-  // 8. Extra new line and update the move turn
-  if(moveTurn == BLACK) cout << endl;
-  
   moveTurn = !moveTurn;// next trun: the opponent moves
 }
 
