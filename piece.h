@@ -76,12 +76,28 @@ class Piece
 
 class King: public Piece::Piece
 {
+  int moveTimes; // a counter indicating how many times this pawn moves
  public:
   
   King(bool color, int rank, int file);
 
   bool movePieceRuleTest(int const RANK_D, int const FILE_D,
                          Piece*** const board) const override;
+
+  /**
+   * Get the moving times value
+   */
+  int getCount();
+
+  /**
+   * Increment the moving times
+   */
+  void incCount();
+
+  /**
+   * Decrement the moving times
+   */
+  void decCount();
 
   ~King() override;
 };
@@ -104,12 +120,29 @@ class Queen: public Piece::Piece
 
 class Rook: public Piece::Piece
 {
+  int moveTimes; // a counter indicating how many times this pawn moves
+  
  public:
 
   Rook(bool color, int rank, int file);
 
   bool movePieceRuleTest(int const RANK_D, int const FILE_D,
                          Piece*** const board) const override;
+
+  /**
+   * Get the moving times value
+   */
+  int getCount();
+
+  /**
+   * Increment the moving times
+   */
+  void incCount();
+
+  /**
+   * Decrement the moving times
+   */
+  void decCount();
 
   ~Rook() override;
 };
@@ -147,7 +180,6 @@ class Knight: public Piece::Piece
 
 class Pawn : public Piece::Piece
 {
-  //bool commitFirstMove; // flag for if the first move of this Pawn piece has been commited
   int moveTimes; // a counter indicating how many times this pawn moves
   
  public:
@@ -156,8 +188,15 @@ class Pawn : public Piece::Piece
 
   bool movePieceRuleTest(int const RANK_D, int const FILE_D,
                          Piece*** const board) const override;
+
+  /**
+   * Increment the moving times
+   */
   void incCount();
 
+  /**
+   * Decrement the moving times
+   */
   void decCount();
   
   ~Pawn() override;

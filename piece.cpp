@@ -72,7 +72,7 @@ Piece::~Piece(){}
 
 /*===== King =====*/
 
-King::King(bool color, int rank, int file): Piece(KING,color,rank,file){}
+King::King(bool color, int rank, int file): Piece(KING,color,rank,file), moveTimes(0){}
 
 bool King::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const board) const
 {
@@ -100,6 +100,24 @@ bool King::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const 
   }
   return false;
 }
+
+
+/**
+ * Get the moving times value
+ */
+int King::getCount(){ return moveTimes; }
+
+
+/**
+ * Increment the King's moving times
+ */
+void King::incCount(){ ++moveTimes; }
+
+
+/**
+ * Decrement the King's moving times
+ */
+void King::decCount() { --moveTimes; }
 
 
 King::~King(){}
@@ -138,7 +156,7 @@ Queen::~Queen(){}
 
 /*===== Rook =====*/
 
-Rook::Rook(bool color, int rank, int file): Piece(ROOK,color,rank, file){}
+Rook::Rook(bool color, int rank, int file): Piece(ROOK,color,rank, file), moveTimes(0){}
 
 
 bool Rook::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const board) const
@@ -158,6 +176,24 @@ bool Rook::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const 
   // Test if the destination follows the rule of moving a rook
   return rookMove(RANK_D,FILE_D,RANK_S,FILE_S,board);
 }
+
+
+/**
+ * Get the moving times value
+ */
+int Rook::getCount(){ return moveTimes; }
+
+
+/**
+ * Increment the Rook's moving times
+ */
+void Rook::incCount(){ ++moveTimes; }
+
+
+/**
+ * Decrement the Pawn's moving times
+ */
+void Rook::decCount() { --moveTimes; }
 
 
 Rook::~Rook(){}
@@ -334,7 +370,7 @@ void Pawn::incCount(){ ++moveTimes; }
 
 
 /**
- * Increment the Pawn's moving times
+ * Decrement the Pawn's moving times
  */
 void Pawn::decCount() { --moveTimes; }
 

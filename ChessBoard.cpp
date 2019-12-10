@@ -219,9 +219,19 @@ void ChessBoard::makeFakeMove(int const RANK_S, int const FILE_S, int const RANK
   // Find my Piece
   Piece* myPiece = board[RANK_S][FILE_S];
 
-  // Increment pawn's moving counter
+  // Increment pawn/king/rook's moving counter
   if(myPiece->getType() == PAWN)
+  {
     static_cast<Pawn*>(myPiece)->incCount();
+  }
+  else if(myPiece->getType() == KING)
+  {
+    static_cast<King*>(myPiece)->incCount();
+  }
+  else if(myPiece->getType() == ROOK)
+  {
+    static_cast<Rook*>(myPiece)->incCount(); 
+  }
 
   if(hostPiece)
   {
@@ -284,9 +294,19 @@ void ChessBoard::undoMakeFakeMove(int const RANK_S, int const FILE_S, int const 
   Piece* myPiece = board[RANK_D][FILE_D];
   bool myColor = myPiece->getColor();
 
-  // Decrement pawn's moving counter
+  // Decrement pawn/king/rook's moving counter
   if(myPiece->getType() == PAWN)
+  {
     static_cast<Pawn*>(myPiece)->decCount();
+  } 
+  else if(myPiece->getType() == KING)
+  {
+    static_cast<King*>(myPiece)->decCount();
+  }
+  else if(myPiece->getType() == ROOK)
+  {
+    static_cast<Rook*>(myPiece)->decCount();
+  }
   
   // Restore my piece
   board[RANK_S][FILE_S] = myPiece; myPiece->setPos(RANK_S,FILE_S);
@@ -415,6 +435,151 @@ bool ChessBoard::isNoFurtherValidMove(bool color)
 
 
 /**
+ * Castling, part of the submitMove()
+ */
+bool ChessBoard::castling(Piece* const myKing, int const RANK_D, int const FILE_D)
+{
+  //=== If myKing isn't really a king: reject his request
+  if(myKing->getType() != KING) return false;
+
+  //=== myKing mustn't have ever moved
+  if(static_cast<King*>(myKing)->getCount() != 0) return false;
+
+  //=== myKing should be safe now
+  if(isInCheck(moveTurn)) return false;
+
+  //=== Get myKing's position and color: which is useful
+  string myPos = myKing->getPos();
+  int const FILE_S = myPos[0] - 'A'; int const RANK_S = myPos[1] - '1';
+
+  string rookPos; // the rook's position
+  
+  //=== The king should moves horizontally
+  if(RANK_S != RANK_D) return false;
+  
+  //=== Castling!
+  if(FILE_S - FILE_D == 2) // king moving left
+  {
+    // The left rook (board[RANK_S][0]) mustn't have ever moved as well
+    if(!board[RANK_S][0]) return false;
+
+    if(board[RANK_S][0]->getType()!=ROOK || board[RANK_S][0]->getColor()!= moveTurn) return false;
+
+    if(static_cast<Rook*>(board[RANK_S][0])->getCount() != 0) return false;
+
+    // Ensure that there is nothing between the king and the rook
+    for(int i = 1; i < FILE_S ; i++)
+    {
+      if(board[RANK_S][FILE_S-i] != nullptr) return false;
+    }
+
+    // Get the rook's (origianl) position
+    rookPos = board[RANK_S][0]->getPos();
+    
+    // His majesty starts to moves and cannot be attacked during his moving
+    for(int i = 0; i < 2; i++)
+    {
+      if(doesThisMoveSaveKing(RANK_S, FILE_S - i, RANK_S, FILE_S - i - 1) == false)
+        return false;
+    }
+
+    // Submit the king's move!
+    board[RANK_S][FILE_D] = board[RANK_S][FILE_S];
+    board[RANK_S][FILE_S] = nullptr;
+    myKing->setPos(RANK_S,FILE_D);
+    static_cast<King*>(myKing)->incCount(); // update count
+
+    // The rook moves now
+    board[RANK_S][0] = board[RANK_S][FILE_D+1]; // rook at the right to the king
+    board[RANK_S][0] = nullptr;
+    board[RANK_S][FILE_D+1]->setPos(RANK_S,FILE_D+1);
+    static_cast<Rook*>(board[RANK_S][FILE_D+1])->incCount();
+  }
+
+  if(FILE_D - FILE_S == 2) // king moving right: the right rook moves
+  {
+    // The right rook (board[RANK_S][7]) mustn't have ever moved as well
+    if(!board[RANK_S][BOARD_SIZE-1]) return false;
+
+    if(board[RANK_S][BOARD_SIZE-1]->getType()!=ROOK ||
+       board[RANK_S][BOARD_SIZE-1]->getColor()!= moveTurn)
+      return false;
+
+    if(static_cast<Rook*>(board[RANK_S][BOARD_SIZE-1])->getCount() != 0) return false;
+
+    // Ensure that there is nothing between the king and the rook
+    for(int i = 1; i < BOARD_SIZE-1-FILE_S ; i++)
+    {
+      if(board[RANK_S][FILE_S+i] != nullptr) return false;
+    }
+
+    // Get the rook's (origianl) position
+    rookPos = board[RANK_S][BOARD_SIZE-1]->getPos();
+    
+    // His majesty starts to moves and cannot be attacked during his moving
+    for(int i = 0; i < 2; i++)
+    {
+      if(doesThisMoveSaveKing(RANK_S, FILE_S + i, RANK_S, FILE_S + i + 1) == false)
+        return false;
+    }
+
+    board[RANK_S][FILE_D] = board[RANK_S][FILE_S];
+    board[RANK_S][FILE_S] = nullptr;
+    myKing->setPos(RANK_S,FILE_D);
+    static_cast<King*>(myKing)->incCount();
+
+    board[RANK_S][BOARD_SIZE-1] = board[RANK_S][FILE_D-1]; // rook at the left to the king
+    board[RANK_S][BOARD_SIZE-1] = nullptr;
+    board[RANK_S][FILE_D-1]->setPos(RANK_S,FILE_D-1);
+    static_cast<Rook*>(board[RANK_S][FILE_D-1])->incCount();
+  }
+
+  //=== Printing
+  cout << *myKing << " commits castling and moves from " << myPos << " to "
+       << myKing->getPos() << ", "
+       << *board[RANK_S][FILE_D-1] << " moves from " << rookPos << " to "
+       << board[RANK_S][FILE_D-1]->getPos() << endl;
+
+  //=== Test if this leads to the opponent being in check or in checkmate or in stalemate
+  bool oppoColor = (moveTurn == WHITE ? BLACK : WHITE);
+
+  // Leading to opponent in check? 
+  bool incheckFlag = isInCheck(oppoColor);
+  // Leading to opponent has no legal move?
+  bool noFurtherMove = isNoFurtherValidMove(oppoColor);
+
+  if(incheckFlag && noFurtherMove) // opponent in checkmate
+  {
+    gameOver = true;
+    cout << (moveTurn == WHITE ? "Black " : "White ") << "is in checkmate" << endl; 
+  }
+  else if(incheckFlag && !noFurtherMove) // opponent in check only
+  {
+    if(oppoColor == WHITE)
+    {
+      //whiteInCheck = true;
+      cout << "White is in check" << endl;
+    }
+    else
+    {
+      //blackInCheck = true;
+      cout << "Black is in check" << endl;
+    }
+  }
+  else if(!incheckFlag && noFurtherMove) // opponnent in stalemate
+  {
+    gameOver = true;
+    cout << "Stalemate. Game over." << endl;
+  }
+  // Otherwise: normal move and exit
+  moveTurn = !moveTurn;// next trun: the opponent moves
+
+  return true;
+}
+
+
+
+/**
  * Make one moving on the chessboard
  * srcPos: source position, desPos: destination position
  */
@@ -449,6 +614,10 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   }
   else
     myPiece = board[RANK_S][FILE_S];
+
+  //=== 1.3 Test for castling
+  if(castling(myPiece,RANK_D,FILE_D))
+    return;
 
   //=== 2. Test if the move is legal
   if(myPiece->movePieceRuleTest(RANK_D,FILE_D,board) == false)

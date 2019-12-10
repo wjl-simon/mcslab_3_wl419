@@ -58,6 +58,12 @@ class ChessBoard
    */
   bool doesThisMoveSaveKing(int const RANK_S, int const FILE_S,
                             int const RANK_D, int const FILE_D);
+
+  /**
+   * Castling, part of the submitMove()
+   */
+  bool castling(Piece* const myKing, int const RANK_D, int const FILE_D);
+
   
   /**
    * Check if there is no further leagl move.
