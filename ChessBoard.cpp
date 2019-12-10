@@ -452,20 +452,22 @@ bool ChessBoard::castling(Piece* const myKing, int const RANK_D, int const FILE_
   string myPos = myKing->getPos();
   int const FILE_S = myPos[0] - 'A'; int const RANK_S = myPos[1] - '1';
 
-  string rookPos; // the rook's position
+  Piece* myRook = nullptr; string rookPos; // the rook's position
   
   //=== The king should moves horizontally
   if(RANK_S != RANK_D) return false;
   
   //=== Castling!
-  if(FILE_S - FILE_D == 2) // king moving left
+  if(FILE_S - FILE_D == 2) //----------white moving left, black moving right
   {
-    // The left rook (board[RANK_S][0]) mustn't have ever moved as well
-    if(!board[RANK_S][0]) return false;
+    myRook = board[RANK_S][0];
+    
+    // The rook mustn't have ever moved as well
+    if(!myRook) return false;
 
-    if(board[RANK_S][0]->getType()!=ROOK || board[RANK_S][0]->getColor()!= moveTurn) return false;
+    if(myRook->getType()!=ROOK || myRook->getColor()!= moveTurn) return false;
 
-    if(static_cast<Rook*>(board[RANK_S][0])->getCount() != 0) return false;
+    if(static_cast<Rook*>(myRook)->getCount() != 0) return false;
 
     // Ensure that there is nothing between the king and the rook
     for(int i = 1; i < FILE_S ; i++)
@@ -474,71 +476,107 @@ bool ChessBoard::castling(Piece* const myKing, int const RANK_D, int const FILE_
     }
 
     // Get the rook's (origianl) position
-    rookPos = board[RANK_S][0]->getPos();
-    
+    rookPos = myRook->getPos();
+
     // His majesty starts to moves and cannot be attacked during his moving
     for(int i = 0; i < 2; i++)
     {
-      if(doesThisMoveSaveKing(RANK_S, FILE_S - i, RANK_S, FILE_S - i - 1) == false)
+      if(doesThisMoveSaveKing(RANK_S, FILE_S - i, RANK_S, FILE_S - i - 1) == true)
+      {
+        // submit those changes first
+        board[RANK_S][FILE_S-i-1] = myKing;
+        board[RANK_S][FILE_S-i] = nullptr;
+        myKing->setPos(RANK_S,FILE_S-i-1);
+      }
+      else // undo the changes then quit
+      {
+        if(i == 1)
+        {
+          board[RANK_S][FILE_S] = myKing;
+          board[RANK_S][FILE_S-1] = nullptr;
+          myKing->setPos(RANK_S,FILE_S);
+        }
+        
         return false;
+      }
     }
-
     // Submit the king's move!
-    board[RANK_S][FILE_D] = board[RANK_S][FILE_S];
-    board[RANK_S][FILE_S] = nullptr;
+    board[RANK_S][FILE_D] = myKing;
+    board[RANK_S][FILE_S-1] = nullptr;
     myKing->setPos(RANK_S,FILE_D);
     static_cast<King*>(myKing)->incCount(); // update count
-
+      
     // The rook moves now
-    board[RANK_S][0] = board[RANK_S][FILE_D+1]; // rook at the right to the king
+    board[RANK_S][FILE_D+1] = myRook; // rook jumps over the king
     board[RANK_S][0] = nullptr;
-    board[RANK_S][FILE_D+1]->setPos(RANK_S,FILE_D+1);
-    static_cast<Rook*>(board[RANK_S][FILE_D+1])->incCount();
+    myRook->setPos(RANK_S,FILE_D+1);
+    static_cast<Rook*>(myRook)->incCount();
+      
   }
-
-  if(FILE_D - FILE_S == 2) // king moving right: the right rook moves
+  
+  //----- King moving right: the right rook moves
+  if(FILE_D - FILE_S == 2)//----------white moving right, black moving left
   {
-    // The right rook (board[RANK_S][7]) mustn't have ever moved as well
-    if(!board[RANK_S][BOARD_SIZE-1]) return false;
+    myRook = board[RANK_S][BOARD_SIZE-1];
+    
+    // The rook mustn't have ever moved as well
+    if(!myRook) return false;
 
-    if(board[RANK_S][BOARD_SIZE-1]->getType()!=ROOK ||
-       board[RANK_S][BOARD_SIZE-1]->getColor()!= moveTurn)
-      return false;
+    if(myRook->getType()!=ROOK || myRook->getColor()!= moveTurn) return false;
 
-    if(static_cast<Rook*>(board[RANK_S][BOARD_SIZE-1])->getCount() != 0) return false;
+    if(static_cast<Rook*>(myRook)->getCount() != 0) return false;
 
     // Ensure that there is nothing between the king and the rook
     for(int i = 1; i < BOARD_SIZE-1-FILE_S ; i++)
     {
       if(board[RANK_S][FILE_S+i] != nullptr) return false;
     }
-
-    // Get the rook's (origianl) position
-    rookPos = board[RANK_S][BOARD_SIZE-1]->getPos();
     
+    // Get the rook's (origianl) position
+    rookPos = myRook->getPos();
+        
     // His majesty starts to moves and cannot be attacked during his moving
     for(int i = 0; i < 2; i++)
     {
-      if(doesThisMoveSaveKing(RANK_S, FILE_S + i, RANK_S, FILE_S + i + 1) == false)
+      if(doesThisMoveSaveKing(RANK_S, FILE_S + i, RANK_S, FILE_S + i + 1) == true)
+      {
+        // submit those changes first
+        board[RANK_S][FILE_S+i+1] = myKing;
+        board[RANK_S][FILE_S+i] = nullptr;
+        myKing->setPos(RANK_S,FILE_S+i+1);
+        //static_cast<King*>(myKing)->incCount();
+      }
+      else // undo the changes then quit
+      {
+        if(i == 1)
+        {
+          board[RANK_S][FILE_S] = myKing;
+          board[RANK_S][FILE_S+1] = nullptr;
+          myKing->setPos(RANK_S,FILE_S);
+        }
+        
         return false;
+      }
     }
-
-    board[RANK_S][FILE_D] = board[RANK_S][FILE_S];
-    board[RANK_S][FILE_S] = nullptr;
+      
+    // Submit the king's move!
+    board[RANK_S][FILE_D] = myKing;
+    board[RANK_S][FILE_S+1] = nullptr;
     myKing->setPos(RANK_S,FILE_D);
-    static_cast<King*>(myKing)->incCount();
+    static_cast<King*>(myKing)->incCount(); // update count
 
-    board[RANK_S][BOARD_SIZE-1] = board[RANK_S][FILE_D-1]; // rook at the left to the king
+    board[RANK_S][FILE_D-1] = myRook; // rook at the left to the king
     board[RANK_S][BOARD_SIZE-1] = nullptr;
-    board[RANK_S][FILE_D-1]->setPos(RANK_S,FILE_D-1);
-    static_cast<Rook*>(board[RANK_S][FILE_D-1])->incCount();
+    myRook->setPos(RANK_S,FILE_D-1);
+    static_cast<Rook*>(myRook)->incCount();
+    
   }
-
+  
   //=== Printing
   cout << *myKing << " commits castling and moves from " << myPos << " to "
        << myKing->getPos() << ", "
-       << *board[RANK_S][FILE_D-1] << " moves from " << rookPos << " to "
-       << board[RANK_S][FILE_D-1]->getPos() << endl;
+       << *myRook << " moves from " << rookPos << " to "
+       << myRook->getPos() << endl;
 
   //=== Test if this leads to the opponent being in check or in checkmate or in stalemate
   bool oppoColor = (moveTurn == WHITE ? BLACK : WHITE);

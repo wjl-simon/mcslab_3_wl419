@@ -94,7 +94,7 @@ bool King::movePieceRuleTest(int const RANK_D, int const FILE_D, Piece*** const 
   {
     if(FILE_D <= FILE_S+1 && FILE_D >= FILE_S-1)
     {
-      if(RANK_D != RANK_S && FILE_D != FILE_S) // mustn't remain where it was
+      if(RANK_D != RANK_S || FILE_D != FILE_S) // mustn't remain where it was
         return true;
     }
   }

@@ -4,7 +4,47 @@
 using namespace std;
 
 int main() {
-      
+
+  cout << "=========================\n";
+  cout << "      Test castling\n";
+  cout << "=========================\n\n";
+
+  ChessBoard cb;
+  cout << '\n';
+  
+  cb.resetBoard();
+  cout << '\n';
+
+  cb.submitMove("C2", "C4");
+  cb.submitMove("F7", "F5");
+  cout << '\n';
+
+  cb.submitMove("B1", "C3");
+  cb.submitMove("G8", "F6");
+  cout << '\n';
+
+  cb.submitMove("B2", "B4");
+  cb.submitMove("G7", "G6");
+  cout << '\n';
+
+  cb.submitMove("C1", "A3");
+  cb.submitMove("F8", "H6");
+  cout << '\n';
+
+  cb.submitMove("D1", "A4");
+  cb.submitMove("G6", "G5");
+  cout << '\n';
+
+  cb.submitMove("E1", "C1"); // castling
+  cb.submitMove("E8", "G8"); // castling again
+  cout << '\n';
+
+  cb.submitMove("A4", "A5");
+  cb.submitMove("A7", "A6");
+  cout << '\n';
+
+    /*
+  
   cout << "========================\n";
   cout << "  Stalemate Testing 1\n";
   cout << "========================\n\n"; 
@@ -71,7 +111,7 @@ int main() {
 
   cb.submitMove("G6","F5");
   cout << '\n';
- 
+    */
 
   /*  
 	cout << "========================\n";
