@@ -40,7 +40,7 @@ inline bool rookMove(int const RANK_D,int const FILE_D,int const RANK_S,int cons
     
     if(RANK_D < RANK_S) // moving down
     {
-      int maxstep = FILE_S - FILE_D - 1;
+      int maxstep = RANK_S - RANK_D - 1;
       for(int i = 1; i <= maxstep; i++)
         if(board[RANK_S-i][FILE_S] != nullptr) return false;
     }

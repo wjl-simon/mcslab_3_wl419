@@ -11,7 +11,7 @@ const int ChessBoard::NUM_P = 16;
 
 
 ChessBoard::ChessBoard():board(nullptr),whitePieces(nullptr),blackPieces(nullptr),
-                         moveTurn(WHITE),whiteInCheck(false),blackInCheck(false),gameOver(false)
+                         moveTurn(WHITE),gameOver(false)
 {
   setupBoard(); // set up a chess board
 }
@@ -122,15 +122,8 @@ inline void ChessBoard::clearBoard()
   if(board)
   {
     for(int i = 0; i < BOARD_SIZE; i++)
-    {
-      /*
-      for(int j = 0; j < BOARD_SIZE; j++)
-      {
-        if(board[i][j]) delete board[i][j];
-      }
-      */
       delete [] board[i];
-    }
+    
     delete [] board; board = nullptr;
   }
 }
@@ -145,7 +138,7 @@ void ChessBoard::resetBoard()
   // Get a new chess board
   clearBoard(); setupBoard();
   // Reset the flags
-  moveTurn = WHITE; whiteInCheck = false, blackInCheck = false; gameOver = false;
+  moveTurn = WHITE;  gameOver = false;
 }
 
 
@@ -173,7 +166,6 @@ Piece* ChessBoard::findKing(bool color) const
     if(pieceList[i] && pieceList[i]->getType() == KING) return pieceList[i];
   }
 
-  //throw PiManipErr("Cannot find the king!");
   cerr << "Cannot find the king!" << endl << endl;
   return nullptr;
 }
@@ -235,7 +227,6 @@ void ChessBoard::makeFakeMove(int const RANK_S, int const FILE_S, int const RANK
   {
     cerr << "Should Pass a null pointer in makeFakeMove()" << endl << endl;
     return;
-    //throw PiManipErr("Should Pass a null pointer in makeFakeMove()!");
   }
 
   // Test if the destination is hostile, if so: "take that piece"
@@ -320,7 +311,6 @@ void ChessBoard::undoMakeFakeMove(int const RANK_S, int const FILE_S, int const 
     {
       cerr << "Cannot put back the taken piece!" << endl << endl;
       return;
-      //throw PiManipErr("Cannot put back the taken piece!");
     }
     
     // Put back into the blackPieces list
@@ -338,7 +328,6 @@ void ChessBoard::undoMakeFakeMove(int const RANK_S, int const FILE_S, int const 
     {
       cerr << "Cannot put back the taken piece!" << endl << endl;
       return;
-      //throw PiManipErr("Cannot put back the taken piece!");
     }
   }
   else
@@ -359,7 +348,7 @@ bool ChessBoard::doesThisMoveSaveKing(int const RANK_S, int const FILE_S,
   bool myColor = myPiece->getColor();
  
   //--- 2. Test if legal
-  if(myPiece->movePieceRuleTest(RANK_D,FILE_D,board) == false) return false; // legal to move there?
+  if(myPiece->movePieceRuleTest(RANK_D,FILE_D,board) == false) return false;
 
   //--- 3.  Attempting some "fake moves" here:
   Piece* hostPiece = nullptr; // ptr to the hostile piece at destination (if there is such one)
@@ -381,9 +370,11 @@ bool ChessBoard::doesThisMoveSaveKing(int const RANK_S, int const FILE_S,
 
 
 /**
- * Check if a king is checkmated (used to test if a submitted move would lead to this)
+ * Given a set of a board plus the pieces (not necessary the member ones), Check if there
+ * is no further valid move. Used to test for checkmate and stalemate, provided that a 
+ * valid move has been ubmitted.
  */
-bool ChessBoard::isCheckmate(bool color)
+bool ChessBoard::isNoFurtherValidMove(bool color)
 {
   std::string myPos;
   int myRank, myFile;
@@ -424,46 +415,6 @@ bool ChessBoard::isCheckmate(bool color)
 
 
 /**
- * Given a set of a board plus the pieces (not necessary the member ones), Check if there
- * is no further leagl move. Used to test for stalemate, provided that a valid move has been 
- * submitted.
- */
-bool ChessBoard::isNoFurtherLegalMove(bool color) const
-{
-  // Make some copies
-  Piece* pieceList[NUM_P];
-  if(color == WHITE)
-  {
-    for(int i = 0; i < NUM_P; i++)
-      pieceList[i] = whitePieces[i];
-  }
-  else
-  {
-    for(int i = 0; i < NUM_P; i++)
-      pieceList[i] = blackPieces[i];
-  }
-
-  // Test if there exists some legal moves
-  for(int k = 0; k < NUM_P; k++) // traverse all pieces of the own side
-  {
-    if(!pieceList[k]) continue;
-
-    // Can pieces[k] make any moves on the board? if so returns true
-    for(int i = 0; i < BOARD_SIZE; i++)
-    {
-      for(int j = 0; j < BOARD_SIZE; j++)
-      {
-        if(pieceList[k]->movePieceRuleTest(i,j,board)) return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-
-
-/**
  * Make one moving on the chessboard
  * srcPos: source position, desPos: destination position
  */
@@ -474,71 +425,42 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   int const FILE_D = desPos[0] - 'A'; int const RANK_D = desPos[1] - '1';
 
   Piece* myPiece = nullptr; Piece* hostPiece = nullptr;
+
+  //=== 0. Test if the game is over
+  if(gameOver)
+  {
+    cerr << "The game was over, please start a new game!" << endl;
+    return;  
+  } 
   
-  //=== 0.1. Test if the source position is empty
+  //=== 1.1 Test if the source position is empty
   if(!board[RANK_S][FILE_S])
   {
     cerr << "There is no piece at position " << srcPos << "!" << endl;
     return;
   }
   
-  //=== 0.2. Test if the source position is of opponent's
+  //=== 1.2. Test if the source position is of opponent's
   if(board[RANK_S][FILE_S]->getColor()!=moveTurn)
   {
      cerr << "It is not " << (moveTurn==WHITE ? "Black's ": "White's ")
          << " turn to move!" << endl;
-    //throw PiManipErr("Invalid source position!");
      return;
   }
   else
     myPiece = board[RANK_S][FILE_S];
 
-
-  //=== 1. Test if the game is over (a king is checkmated)
-  if(gameOver)
-  {
-    cerr << "The game was over, please start a new game!" << endl;
-    //throw PiManipErr("The game was over, please start a new game!");
-  }
-  
-  //=== 2. Test if own side is already in incheck: if so, check for stalemate
-  if(moveTurn == WHITE)
-  {
-    if(whiteInCheck)
-    {
-      if(isNoFurtherLegalMove(moveTurn))
-      {
-        gameOver = true;
-        cout << "Stalemate. Game over." << endl;
-        return;
-      }
-    }
-  }
-  else
-  {
-    if(blackInCheck)
-    {
-      if(isNoFurtherLegalMove(moveTurn))
-      {
-        gameOver = true;
-        cout << "Stalemate. Game over." << endl;
-        return;
-      }
-    }
-  }
-
-  //=== 3. Test if the move is legal
+  //=== 2. Test if the move is legal
   if(myPiece->movePieceRuleTest(RANK_D,FILE_D,board) == false)
   {
     cerr << *myPiece << " cannot move to " << desPos << "!" << endl;
     return;
-    //throw PiManipErr("Invalid move of a piece!");
   }
 
-  //=== 4. My side make a fake move
+  //=== 3. My side make a fake move
   makeFakeMove(RANK_S,FILE_S,RANK_D,FILE_D,hostPiece);
 
-  //=== 5. Get the info about the hostile piece (to print when a piece is taken out)
+  //=== 4. Get the info about the hostile piece (to print when a piece is taken out)
   std::string hostPieceInfo;
   if(hostPiece)
   {
@@ -569,15 +491,14 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
   {
     // Restore
     undoMakeFakeMove(RANK_S,FILE_S,RANK_D,FILE_D,hostPiece);
+    
     cerr << *myPiece << " cannot move to " << desPos << "!" << endl;
     return;
-    // throw an exception
-    //throw PiManipErr("Invalid move of a piece!");  
   }
   else // not in check
   {
-    if(moveTurn == WHITE) whiteInCheck = false;
-    else blackInCheck = false;
+    //if(moveTurn == WHITE) whiteInCheck = false;
+    //else blackInCheck = false;
     
     delete hostPiece; // commit this move
 
@@ -589,37 +510,46 @@ void ChessBoard::submitMove(char const * srcPos, char const * desPos)
     cout << endl;
   }
 
-  //=== 7. Test if this leads to the opponent being in check or in checkmate
+  //=== 7. Test if this leads to the opponent being in check or in checkmate or in stalemate
   bool oppoColor = (moveTurn == WHITE ? BLACK : WHITE);
-  if(isInCheck(oppoColor))
+
+  // Leading to opponent in check? 
+  bool incheckFlag = isInCheck(oppoColor);
+  // Leading to opponent has no legal move?
+  bool noFurtherMove = isNoFurtherValidMove(oppoColor);
+
+  if(incheckFlag && noFurtherMove) // opponent in checkmate
   {
-    if(isCheckmate(oppoColor)) // opponent is checkmated
+    gameOver = true;
+    cout << (moveTurn == WHITE ? "Black " : "White ") << "is in checkmate" << endl; 
+  }
+  else if(incheckFlag && !noFurtherMove) // opponent in check only
+  {
+    if(oppoColor == WHITE)
     {
-      gameOver = true;
-      cout << (moveTurn == WHITE ? "Black " : "White ") << "is in checkmate" << endl;
+      //whiteInCheck = true;
+      cout << "White is in check" << endl;
     }
-    else // opponent is incheck only
+    else
     {
-      if(oppoColor == WHITE)
-      {
-        whiteInCheck = true;
-        cout << "White is in check" << endl;
-      }
-      else
-      {
-        blackInCheck = true;
-        cout << "Black is in check" << endl;
-      }
+      //blackInCheck = true;
+      cout << "Black is in check" << endl;
     }
   }
+  else if(!incheckFlag && noFurtherMove) // opponnent in stalemate
+  {
+    gameOver = true;
+    cout << "Stalemate. Game over." << endl;
+    return;
+  }
+  // Otherwise: normal move and exit
   moveTurn = !moveTurn;// next trun: the opponent moves
 }
 
 
-ChessBoard::~ChessBoard()
-{
-  clearBoard();
-}
+
+ChessBoard::~ChessBoard(){ clearBoard(); }
+
 
 
 /**

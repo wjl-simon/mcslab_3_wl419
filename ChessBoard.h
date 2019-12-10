@@ -12,8 +12,6 @@ class ChessBoard
   Piece** blackPieces; // fast look-up for the black piece ptrs
 
   bool moveTurn; // if = WHITE: white's turn to move; =BLACK: black's turn to move
-  bool whiteInCheck;
-  bool blackInCheck;
   bool gameOver; // true if a board game ends i.e. a king being checkmated or stalemate
   
   /**
@@ -33,7 +31,7 @@ class ChessBoard
    */
   Piece* findKing(bool color) const;
 
-  /**** 
+  /**
    * Make a "fake move" on the board, it can handle scenarios where there is an opponent's piece
    * as well as simplly moveing
    * Piece* & hostPiece should be a nullptr
@@ -62,16 +60,10 @@ class ChessBoard
                             int const RANK_D, int const FILE_D);
   
   /**
-   * Check if a king is checkmated (used to test if a submitted move would lead to this)
-   * Effectively will not change the data members
-   */
-  bool isCheckmate(bool color);
-
-  /**
    * Check if there is no further leagl move.
-   * Used to test for stalemate, provided that a valid move has been submitted.
+   * Used to test for checkmate and stalemate, provided that a valid move has been submitted.
    */
-  bool isNoFurtherLegalMove(bool color) const;
+  bool isNoFurtherValidMove(bool color);
 
   
  public:
